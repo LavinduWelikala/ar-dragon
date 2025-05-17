@@ -18,6 +18,11 @@
       </div>
     </div>
 
+    <!-- Roar Button (Initially Hidden) -->
+    <div id="roarButton" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #e53935; color: white; padding: 15px 30px; border-radius: 8px; font-size: 20px; font-family: Arial; cursor: pointer; display: none; z-index: 999;">
+      ROAR!
+    </div>
+
     <audio id="roar-audio" src="roar.mp3" preload="auto"></audio>
     
     <a-scene embedded arjs="debugUIEnabled: false;">
@@ -57,95 +62,88 @@
       
       // Audio element
       const roarAudio = document.getElementById("roar-audio");
-      
+
       // Get references to elements
       const marker = document.querySelector("#marker");
       const dragon = document.querySelector("#dragon-model");
       const startButton = document.getElementById("startButton");
-      
+      const roarButton = document.getElementById("roarButton");
+
       // Variables to track state
       let audioContext = null;
       let isMarkerVisible = false;
       let audioInitialized = false;
-      
+
       // Initialize audio on user interaction
       startButton.addEventListener("click", () => {
-        // Create and resume AudioContext
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         if (audioContext.state === "suspended") {
           audioContext.resume();
         }
-        
-        // Hide the start button
+
         startButton.style.display = "none";
-        
-        // Set flag
         audioInitialized = true;
-        
-        // If marker is already visible, play sound
-        if (isMarkerVisible) {
-          playSound();
-        }
-        
-        debugInfo.textContent = "Audio initialized. Ready for marker detection.";
+
+        debugInfo.textContent = "Audio initialized. Waiting for marker.";
       });
-      
-      // Function to play sound
+
+      // Play sound
       function playSound() {
         if (!audioInitialized) return;
-        
-        // Reset and play
         roarAudio.currentTime = 0;
         roarAudio.play().catch(e => {
           debugInfo.textContent = `Sound error: ${e.message}`;
         });
       }
-      
-      // Function to stop sound
+
+      // Stop sound
       function stopSound() {
         roarAudio.pause();
         roarAudio.currentTime = 0;
       }
-      
+
+      // Roar button click plays the sound
+      roarButton.addEventListener("click", () => {
+        if (!audioInitialized) {
+          debugInfo.textContent = "Audio not initialized yet!";
+          return;
+        }
+
+        playSound();
+        debugInfo.textContent = "Roar sound played!";
+      });
+
       // Marker detection events
       marker.addEventListener("markerFound", () => {
         isMarkerVisible = true;
-        debugInfo.textContent = "Marker found! Animation should be playing.";
-        
-        // Play sound if audio is initialized
-        if (audioInitialized) {
-          playSound();
-        }
-        
-        // Make sure animation is playing
+        debugInfo.textContent = "Marker found! Tap ROAR! to play sound.";
+        roarButton.style.display = "block";
+
+        // Ensure animation is playing
         if (dragon.components && dragon.components["animation-mixer"]) {
           dragon.components["animation-mixer"].play();
           debugInfo.textContent += " Animation mixer is playing.";
-        } else {
-          debugInfo.textContent += " Animation mixer component not found!";
         }
       });
-      
+
       marker.addEventListener("markerLost", () => {
         isMarkerVisible = false;
         debugInfo.textContent = "Marker lost. Animation paused.";
-        
-        // Stop sound
+        roarButton.style.display = "none";
         stopSound();
-        
-        // Optionally pause animation when marker is lost
+
         if (dragon.components && dragon.components["animation-mixer"]) {
           dragon.components["animation-mixer"].pause();
         }
       });
-      
-      // Check if the model has animations
+
+      // Check if model has animations
       dragon.addEventListener("model-loaded", (e) => {
         const model = e.detail.model;
         if (model && model.animations && model.animations.length > 0) {
           debugInfo.textContent = `Model loaded with ${model.animations.length} animations`;
-          
-          // If you want to play a specific animation
+
+          // Optional: set first clip
           if (model.animations.length > 1) {
             dragon.setAttribute("animation-mixer", {
               clip: model.animations[0].name,
