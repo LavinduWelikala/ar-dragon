@@ -39,7 +39,8 @@
           position="0 0.2 0"
           rotation="0 180 0"
           scale="0.1 0.1 0.1"
-          animation-mixer="loop: repeat; clampWhenFinished: true">
+          animation-mixer="loop: repeat; clampWhenFinished: true"
+          animation="property: position; to: 0 0.2 -5; dur: 10000; loop: true; easing: linear">
         </a-entity>
       </a-marker>
       
@@ -60,21 +61,17 @@
       debugInfo.style.zIndex = "999";
       document.body.appendChild(debugInfo);
       
-      // Audio element
       const roarAudio = document.getElementById("roar-audio");
-
-      // Get references to elements
       const marker = document.querySelector("#marker");
       const dragon = document.querySelector("#dragon-model");
       const startButton = document.getElementById("startButton");
       const roarButton = document.getElementById("roarButton");
 
-      // Variables to track state
       let audioContext = null;
       let isMarkerVisible = false;
       let audioInitialized = false;
 
-      // Initialize audio on user interaction
+      // Start audio context on user click
       startButton.addEventListener("click", () => {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         if (audioContext.state === "suspended") {
@@ -87,7 +84,6 @@
         debugInfo.textContent = "Audio initialized. Waiting for marker.";
       });
 
-      // Play sound
       function playSound() {
         if (!audioInitialized) return;
         roarAudio.currentTime = 0;
@@ -96,13 +92,11 @@
         });
       }
 
-      // Stop sound
       function stopSound() {
         roarAudio.pause();
         roarAudio.currentTime = 0;
       }
 
-      // Roar button click plays the sound
       roarButton.addEventListener("click", () => {
         if (!audioInitialized) {
           debugInfo.textContent = "Audio not initialized yet!";
@@ -113,16 +107,13 @@
         debugInfo.textContent = "Roar sound played!";
       });
 
-      // Marker detection events
       marker.addEventListener("markerFound", () => {
         isMarkerVisible = true;
         debugInfo.textContent = "Marker found! Tap ROAR! to play sound.";
         roarButton.style.display = "block";
 
-        // Ensure animation is playing
         if (dragon.components && dragon.components["animation-mixer"]) {
           dragon.components["animation-mixer"].play();
-          debugInfo.textContent += " Animation mixer is playing.";
         }
       });
 
@@ -137,13 +128,11 @@
         }
       });
 
-      // Check if model has animations
       dragon.addEventListener("model-loaded", (e) => {
         const model = e.detail.model;
         if (model && model.animations && model.animations.length > 0) {
           debugInfo.textContent = `Model loaded with ${model.animations.length} animations`;
 
-          // Optional: set first clip
           if (model.animations.length > 1) {
             dragon.setAttribute("animation-mixer", {
               clip: model.animations[0].name,
